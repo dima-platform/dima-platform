@@ -1,0 +1,10 @@
+name: dima_customer
+publish_to: none
+version: 0.6.0+6
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  dima_mobile:
+    path: ../../packages/dima_mobile

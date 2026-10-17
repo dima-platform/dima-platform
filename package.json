@@ -1,0 +1,21 @@
+{
+  "name": "dima-platform",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node services/api/server.mjs",
+    "start:hosted": "node services/api/hosted-start.mjs",
+    "test:connected": "node scripts/check-connected.mjs",
+    "test": "node --test services/api/*.test.mjs",
+    "db:migrate": "node --env-file=.env services/api/migrate.mjs",
+    "db:seed": "node --env-file=.env services/api/migrate.mjs --seed",
+    "start:db": "node --env-file=.env services/api/server.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

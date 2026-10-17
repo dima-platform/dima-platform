@@ -1,0 +1,10 @@
+name: dima_mobile
+publish_to: none
+version: 0.6.0
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter

@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: dima-connected-demo
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install --omit=dev
+    startCommand: node services/api/hosted-start.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: staging
+      - key: DIMA_HOSTED_DEMO
+        value: "true"
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dima-demo-db
+          property: connectionString
+databases:
+  - name: dima-demo-db
+    plan: free
+    region: frankfurt
+    databaseName: dima_demo
+    user: dima_demo
+    ipAllowList: []
