@@ -1,0 +1,5 @@
+node_modules/
+.env
+.dart_tool/
+build/
+*.log
