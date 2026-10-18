@@ -1,0 +1,17 @@
+BEGIN;
+CREATE TABLE users (id uuid PRIMARY KEY, phone text UNIQUE NOT NULL CHECK(phone ~ '^\+216[0-9]{8}$'), locale text NOT NULL DEFAULT 'ar' CHECK(locale IN ('ar','fr')), created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE user_roles(user_id uuid REFERENCES users(id), role text CHECK(role IN ('customer','courier','merchant','admin')), PRIMARY KEY(user_id,role));
+CREATE TABLE stores(id uuid PRIMARY KEY,name_ar text NOT NULL,name_fr text NOT NULL,category text NOT NULL CHECK(category IN ('restaurants','groceries','parcels')),is_open boolean NOT NULL DEFAULT false,delivery_milli integer NOT NULL CHECK(delivery_milli>=0));
+CREATE TABLE store_members(store_id uuid REFERENCES stores(id),user_id uuid REFERENCES users(id),PRIMARY KEY(store_id,user_id));
+CREATE TABLE courier_profiles(user_id uuid PRIMARY KEY REFERENCES users(id),verified boolean NOT NULL DEFAULT false,available boolean NOT NULL DEFAULT false);
+CREATE TABLE addresses(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),label text NOT NULL,address_text text NOT NULL,latitude numeric(9,6) CHECK(latitude BETWEEN -90 AND 90),longitude numeric(9,6) CHECK(longitude BETWEEN -180 AND 180));
+CREATE TABLE products(id uuid PRIMARY KEY,store_id uuid NOT NULL REFERENCES stores(id),name_ar text NOT NULL,name_fr text NOT NULL,price_milli integer NOT NULL CHECK(price_milli>=0),available boolean NOT NULL DEFAULT true,UNIQUE(id,store_id));
+CREATE TABLE orders(id uuid PRIMARY KEY,customer_id uuid NOT NULL REFERENCES users(id),store_id uuid NOT NULL REFERENCES stores(id),courier_id uuid REFERENCES courier_profiles(user_id),address_snapshot jsonb NOT NULL,status text NOT NULL DEFAULT 'placed' CHECK(status IN ('placed','accepted','preparing','ready','assigned','picked_up','delivered','cancelled')),delivery_milli integer NOT NULL CHECK(delivery_milli>=0),total_milli integer NOT NULL CHECK(total_milli>=delivery_milli),currency text NOT NULL DEFAULT 'TND' CHECK(currency='TND'),payment_method text NOT NULL DEFAULT 'cash_on_delivery' CHECK(payment_method='cash_on_delivery'),version integer NOT NULL DEFAULT 1 CHECK(version>0),created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(id,store_id),CHECK(status NOT IN ('assigned','picked_up','delivered') OR courier_id IS NOT NULL));
+CREATE TABLE order_items(order_id uuid NOT NULL,store_id uuid NOT NULL,product_id uuid NOT NULL,name_snapshot text NOT NULL,quantity integer NOT NULL CHECK(quantity BETWEEN 1 AND 20),price_milli integer NOT NULL CHECK(price_milli>=0),PRIMARY KEY(order_id,product_id),FOREIGN KEY(order_id,store_id) REFERENCES orders(id,store_id),FOREIGN KEY(product_id,store_id) REFERENCES products(id,store_id));
+CREATE TABLE order_events(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,order_id uuid NOT NULL REFERENCES orders(id),actor_id uuid NOT NULL REFERENCES users(id),status text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE idempotency_keys(user_id uuid REFERENCES users(id),key text CHECK(length(key) BETWEEN 8 AND 128),request_hash text NOT NULL,order_id uuid NOT NULL REFERENCES orders(id),created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(user_id,key));
+CREATE INDEX orders_customer_created ON orders(customer_id,created_at DESC);
+CREATE INDEX orders_store_status ON orders(store_id,status);
+CREATE INDEX orders_courier_status ON orders(courier_id,status);
+CREATE INDEX order_events_order ON order_events(order_id,id);
+COMMIT;
